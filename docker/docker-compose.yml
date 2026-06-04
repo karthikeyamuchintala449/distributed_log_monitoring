@@ -1,0 +1,152 @@
+version: '3.9'
+
+services:
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - log-network
+
+  # Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - log-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server=localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - log-network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: logadmin
+      POSTGRES_PASSWORD: logpass123
+      POSTGRES_DB: logdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - log-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - log-network
+
+  # Go Backend
+  backend:
+    build:
+      context: ./backend_go
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: development
+      APP_NAME: "Distributed Log Monitoring System"
+      APP_VERSION: "2.0.0"
+      DEBUG: "false"
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      API_PREFIX: "/api/v1"
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: "9200"
+      ELASTICSEARCH_SCHEME: http
+      ELASTICSEARCH_INDEX_PREFIX: logs
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC_LOGS: logs
+      KAFKA_TOPIC_ALERTS: alerts
+      KAFKA_CONSUMER_GROUP: log_monitor
+      KAFKA_BATCH_SIZE: "1000"
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      ALERT_ENABLED: "true"
+      ANOMALY_DETECTION_ENABLED: "true"
+      REAL_TIME_STREAMING_ENABLED: "true"
+      MAX_QUERY_RESULTS: "10000"
+      SEARCH_TIMEOUT_SECONDS: "30"
+      BATCH_PROCESSING_SIZE: "5000"
+      WORKER_POOL_SIZE: "10"
+    ports:
+      - "8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - log-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - log-network
+
+volumes:
+  elasticsearch_data:
+  postgres_data:
+
+networks:
+  log-network:
+    driver: bridge
