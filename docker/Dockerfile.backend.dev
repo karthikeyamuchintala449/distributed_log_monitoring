@@ -48,5 +48,10 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8000
 
+CMD ["air", "-c", ".air.toml"]
+
 # Run application
 ENTRYPOINT ["./backend"]
+
+
+
