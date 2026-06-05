@@ -1,0 +1,10 @@
+github.com/elastic/elastic-transport-go/v8 v8.3.0/go.mod h1:87Vgx9Ik7ycsXV8TbKIEI/8WstDQWQW1t5Nxh4zdQ=
+github.com/elastic/go-elasticsearch/v8 v8.10.1/go.mod h1:pXn+Yt0s1P/P5nz+jyLBx8P2/5Z1v72/WBhKnC3Slo=
+github.com/google/uuid v1.5.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOMSYaJLlZEDSY=
+github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiRA8LdrQyEdWrB9D0kUL+OWJs=
+github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPjTxADrPg1wnxLFBN1prewZ934s=
+github.com/prometheus/client_golang v1.17.0/go.mod h1:VeL+gMmOAxkS2IqfCq0ZmHSL+LjWfWDUmp1mBglbkE=
+github.com/rs/cors v1.10.1/go.mod h1:XyqQ+7LhSghMlnVJYpLWrB0ltRvLREenZWLc4vRxFY=
+github.com/segmentio/kafka-go v0.4.47/go.mod h1:95vWwCY9g1aKZc8g0+iiF7Y8DH1wCmnc2xvP9CTu+0=
+go.uber.org/multierr v1.11.0/go.mod h1:20+QtB9NXm5meta9fIp3531kRMWCbZIOE+nUzjKfnE=
+go.uber.org/zap v1.26.0/go.mod h1:dtqWKTtaic6c7EYjbQcTsinhjvsmmF26yPzLjuSVyg=
