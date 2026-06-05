@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy dependency mappings for optimal caching layers
+RUN npm create vite@latest my-react-app -- --template react-ts
+WORKDIR /app/my-react-app
+
+
+# Install local node packages
+RUN npm install
+
+
+
+# Expose local development interface port
+EXPOSE 3000
+
+# Fire up Vite development mode bound to all incoming host network mappings
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

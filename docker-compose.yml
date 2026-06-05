@@ -1,0 +1,79 @@
+
+services:
+
+  # Go Backend (Configured for Air Hot-Reloading)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend.dev
+    environment:
+      ENVIRONMENT: development
+      APP_NAME: "Distributed Log Monitoring System"
+      APP_VERSION: "2.0.0"
+      DEBUG: "true"
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      API_PREFIX: "/api/v1"
+      ELASTICSEARCH_HOST: elasticsearch
+      ELASTICSEARCH_PORT: "9200"
+      ELASTICSEARCH_SCHEME: http
+      ELASTICSEARCH_INDEX_PREFIX: logs
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC_LOGS: logs
+      KAFKA_TOPIC_ALERTS: alerts
+      KAFKA_CONSUMER_GROUP: log_monitor
+      KAFKA_BATCH_SIZE: "1000"
+      LOG_LEVEL: debug
+      LOG_FORMAT: text
+      ALERT_ENABLED: "true"
+      ANOMALY_DETECTION_ENABLED: "true"
+      REAL_TIME_STREAMING_ENABLED: "true"
+      MAX_QUERY_RESULTS: "10000"
+      SEARCH_TIMEOUT_SECONDS: "30"
+      BATCH_PROCESSING_SIZE: "5000"
+      WORKER_POOL_SIZE: "10"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .\backend:\app
+      - \app\tmp
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - log-network
+
+  # React Frontend (Configured for Vite Hot-Reloading)
+  frontend:
+    build:
+      context: .\frontend
+      dockerfile: Dockerfile.frontend.dev
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000/api/v1
+    volumes:
+      - .\frontend:\app
+      - \app\node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - log-network
+
+
+  
+
+networks:
+  log-network:
+    driver: bridge
